@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - task-network
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - task-network
+  app:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - SERVER_PORT=8000
+      - REDIS_HOST=redis
+      - LOG_FILE=/data/tasks.log
+      - TASK_SIMULATED_DURATION=1.0
+      - TASK_SIMULATED_ERROR_PERCENTAGE=0.1
+      - TASK_ERROR_RETRY_DELAY=5.0
+      - WORKER_TIMEOUT=30.0
+      - TASK_MAX_RETRIES=3
+    volumes:
+      - task-data:/data
+    depends_on:
+      - redis
+    networks:
+      - task-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    environment:
+      - REDIS_HOST=redis
+      - LOG_FILE=/data/tasks.log
+      - TASK_SIMULATED_DURATION=1.0
+      - TASK_SIMULATED_ERROR_PERCENTAGE=0.1
+      - TASK_ERROR_RETRY_DELAY=5.0
+      - WORKER_TIMEOUT=30.0
+      - TASK_MAX_RETRIES=3
+    volumes:
+      - task-data:/data
+    depends_on:
+      - redis
+    networks:
+      - task-network
+
+volumes:
+  task-data:
+
+networks:
+  task-network:
+    driver: bridge

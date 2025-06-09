@@ -1,0 +1,24 @@
+from pydantic_settings import BaseSettings
+from pydantic import Field
+
+class Settings(BaseSettings):
+    SERVER_PORT: int = Field(default=8000, env="SERVER_PORT")
+    REDIS_HOST: str = Field(default="localhost", env="REDIS_HOST")
+    LOG_FILE: str = Field(default="tasks.log", env="LOG_FILE")
+    
+    TASK_SIMULATED_DURATION: float = Field(
+        default=1.0, env="TASK_SIMULATED_DURATION")
+    TASK_SIMULATED_ERROR_PERCENTAGE: float = Field(
+        default=0.1, env="TASK_SIMULATED_ERROR_PERCENTAGE")
+    TASK_ERROR_RETRY_DELAY: float = Field(
+        default=5.0, env="TASK_ERROR_RETRY_DELAY")
+    WORKER_TIMEOUT: float = Field(
+        default=30.0, env="WORKER_TIMEOUT")
+    TASK_MAX_RETRIES: int = Field(
+        default=3, env="TASK_MAX_RETRIES")
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+
+settings = Settings()
