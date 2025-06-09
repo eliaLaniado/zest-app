@@ -1,7 +1,6 @@
 import time
 import logging
-from app.core.config import settings
-from app.api.dependencies import get_logger, get_metrics, get_queue
+from app.core.factories import logger_factory, metrics_factory, queue_factory
 from app.worker.manager import WorkerManager
 
 logging.basicConfig(
@@ -14,9 +13,9 @@ def main():
     logger.info("Starting worker service")
     
     # Initialize dependencies
-    queue = get_queue()
-    logger_component = get_logger()
-    metrics = get_metrics()
+    queue = queue_factory()
+    logger_component = logger_factory()
+    metrics = metrics_factory()
     
     # Create and start worker manager
     manager = WorkerManager(queue, logger_component, metrics)
@@ -42,10 +41,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-pushgateway:
-    image: prom/pushgateway
-    ports:
-      - "9091:9091"
-    networks:
-      - task-network

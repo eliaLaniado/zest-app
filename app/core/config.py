@@ -1,11 +1,22 @@
+
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
 class Settings(BaseSettings):
     SERVER_PORT: int = Field(default=8000, env="SERVER_PORT")
     REDIS_HOST: str = Field(default="localhost", env="REDIS_HOST")
-    LOG_FILE: str = Field(default="tasks.log", env="LOG_FILE")
+    REDIS_PORT: int = Field(default=6379, env="REDIS_PORT")
+    REDIS_DB: int = Field(default=0, env="REDIS_DB")
     
+    LOG_FILE: str = Field(default="tasks.log", env="LOG_FILE")
+    LOGGER_TYPE: str = Field(default="file", env="LOGGER_TYPE")         
+    
+    METRICS_TYPE: str = Field(default="redis", env="METRICS_TYPE")      
+    QUEUE_TYPE: str = Field(default="redis", env="QUEUE_TYPE")     
+    TASK_PRIORITY: int = Field(default=100, env="TASK_PRIORITY")
+    RETRY_TASK_PRIORITY: int = Field(default=10, env="RETRY_TASK_PRIORITY")      
+    TASK_QUEUE_NAME: str = Field(default="task_priority_queue", env="TASK_QUEUE_NAME")
+
     TASK_SIMULATED_DURATION: float = Field(
         default=1.0, env="TASK_SIMULATED_DURATION")
     TASK_SIMULATED_ERROR_PERCENTAGE: float = Field(

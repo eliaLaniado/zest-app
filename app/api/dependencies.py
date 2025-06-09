@@ -1,18 +1,13 @@
-from app.core.config import settings
-from app.infrastructure.file_logger import FileLogger
-from app.infrastructure.prom_metrics import PrometheusMetrics
-from app.infrastructure.redis_queue import RedisQueue
+from app.core.factories import logger_factory, metrics_factory, queue_factory
 from app.core.logger import BaseLogger
 from app.core.metrics import BaseMetrics
 from app.core.queue import BaseQueue
 
 def get_logger() -> BaseLogger:
-    return FileLogger()
-
-_METRICS = PrometheusMetrics()
+    return logger_factory()
 
 def get_metrics() -> BaseMetrics:
-    return _METRICS
+    return metrics_factory()
 
 def get_queue() -> BaseQueue:
-    return RedisQueue()
+    return queue_factory()

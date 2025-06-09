@@ -8,11 +8,11 @@ class RedisQueue(BaseQueue):
     def __init__(self):
         self._redis = redis.Redis(
             host=settings.REDIS_HOST,
-            port=6379,
-            db=0,
+            port=settings.REDIS_PORT,
+            db=settings.REDIS_DB,
             decode_responses=False
         )
-        self._queue_name = "task_queue"
+        self._queue_name = settings.TASK_QUEUE_NAME
 
     def enqueue(self, task: Task) -> str:
         serialized = pickle.dumps(task)

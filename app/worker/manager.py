@@ -47,19 +47,35 @@ class WorkerManager:
             try:
                 logger.debug(f"{thread_name} waiting for task...")
                 task = self.queue.dequeue()
+                if task is None:
+                    logger.debug(f"{thread_name} found no task in queue, sleeping briefly.")
+                    time.sleep(0.1)
+                    continue
                 logger.info(f"{thread_name} dequeued task: {getattr(task, 'id', repr(task))}")
                 self.idle_workers -= 1
                 self.active_workers += 1
                 
                 processor = TaskProcessor(self.logger, self.metrics)
                 logger.debug(f"{thread_name} processing task: {getattr(task, 'id', repr(task))}")
-                success = processor.process(task)
-                
+                success, processing_time = processor.process(task)
                 if not success and task.attempts < settings.TASK_MAX_RETRIES:
-                    logger.warning(f"{thread_name} failed to process task {getattr(task, 'id', repr(task))}, retrying (attempt {task.attempts})")
-                    self.queue.enqueue(task)
+                    logger.warning(
+                        f"{thread_name} failed to process task {getattr(task, 'id', repr(task))}, "
+                        f"retrying (attempt {task.attempts}/{settings.TASK_MAX_RETRIES})"
+                    )
+                    self.metrics.task_retried()
+                    time.sleep(settings.TASK_ERROR_RETRY_DELAY)
+                    self.queue.enqueue(task, priority=settings.RETRY_TASK_PRIORITY)
+                elif not success:
+                    logger.error(
+                        f"{thread_name} permanently failed task {getattr(task, 'id', repr(task))} "
+                        f"after {task.attempts} attempts. Dropping task."
+                    )
                 else:
-                    logger.info(f"{thread_name} finished task: {getattr(task, 'id', repr(task))}, success: {success}")
+                    logger.info(
+                        f"{thread_name} successfully processed task {getattr(task, 'id', repr(task))} "
+                        f"in {processing_time:.2f}s"
+                    )
                 
                 self.active_workers -= 1
                 self.idle_workers += 1
