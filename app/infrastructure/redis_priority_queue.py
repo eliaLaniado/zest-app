@@ -1,6 +1,6 @@
 import redis
 from app.core.queue import BaseQueue
-from app.domain.tasks import Task
+from app.models.tasks import Task
 from app.core.config import settings
 
 class RedisPriorityQueue(BaseQueue):
@@ -13,9 +13,10 @@ class RedisPriorityQueue(BaseQueue):
         )
         self._queue_name = settings.TASK_QUEUE_NAME
 
-    def enqueue(self, task: Task, priority: int = settings.TASK_PRIORITY) -> None:
+    def enqueue(self, task: Task, priority: int = settings.TASK_PRIORITY) -> str:
         task_data = task.model_dump_json().encode('utf-8')
         self._redis.zadd(self._queue_name, {task_data: priority})
+        return str(task.id)
 
     def dequeue(self) -> Task:
         # Atomically pop the highest priority task (lowest score)

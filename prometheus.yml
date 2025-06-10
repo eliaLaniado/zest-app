@@ -2,7 +2,7 @@ global:
   scrape_interval: 5s
 
 scrape_configs:
-  - job_name: "zest-app"
-    metrics_path: /api/statistics # 👈 this is the important part
+  - job_name: 'zest-app'
     static_configs:
-      - targets: ["app:8000"]
+      - targets: ['app:8000']
+    metrics_path: /metrics

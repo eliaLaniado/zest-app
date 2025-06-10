@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from app.domain.tasks import Task
+from app.models.tasks import Task
 
 class BaseQueue(ABC):
     @abstractmethod

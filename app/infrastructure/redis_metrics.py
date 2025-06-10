@@ -39,3 +39,11 @@ class RedisMetrics(BaseMetrics):
             value = self._redis.get(f"{self._prefix}{key}")
             stats[key] = int(value) if value else 0
         return stats
+
+    def reset(self):
+        keys = [
+            "tasks_processed", "tasks_retried", "tasks_succeeded", "tasks_failed",
+            "queue_length", "idle_workers", "active_workers"
+        ]
+        for key in keys:
+            self._redis.set(f"{self._prefix}{key}", 0)

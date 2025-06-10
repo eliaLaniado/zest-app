@@ -1,7 +1,7 @@
 import redis
 import pickle
 from app.core.queue import BaseQueue
-from app.domain.tasks import Task
+from app.models.tasks import Task
 from app.core.config import settings
 
 class RedisQueue(BaseQueue):

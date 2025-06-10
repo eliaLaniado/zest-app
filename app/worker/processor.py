@@ -5,7 +5,7 @@ import uuid
 from app.core.logger import BaseLogger
 from app.core.metrics import BaseMetrics
 from app.core.config import settings
-from app.domain.tasks import Task
+from app.models.tasks import Task
 
 class TaskProcessor:
     def __init__(self, logger: BaseLogger, metrics: BaseMetrics):

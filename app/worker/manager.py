@@ -86,7 +86,7 @@ class WorkerManager:
                 time.sleep(1)
                 
             except Exception as e:
-                logger.error(f"{thread_name} Worker error: {str(e)}")
+                logger.error(f"{thread_name} Worker error: {str(e)}", exc_info=True)
                 current_time = time.time()
                 idle_time = current_time - last_activity
                 

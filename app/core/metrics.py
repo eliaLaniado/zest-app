@@ -28,3 +28,7 @@ class BaseMetrics(ABC):
     @abstractmethod
     def get_statistics(self) -> dict:
         pass
+
+    @abstractmethod
+    def reset(self):
+        pass

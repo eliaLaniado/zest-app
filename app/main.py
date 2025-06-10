@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api import tasks, stats
+from app.api import tasks, stats, metrics
 from app.core.config import settings
 import logging
 import os
@@ -19,6 +19,7 @@ app = FastAPI(
 # Include routers
 app.include_router(tasks.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
+app.include_router(metrics.router)
 
 @app.on_event("startup")
 async def startup():
