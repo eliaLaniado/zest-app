@@ -1,9 +1,9 @@
 from enum import Enum
-from app.infrastructure.file_logger import FileLogger
-from app.infrastructure.redis_metrics import RedisMetrics
-from app.infrastructure.pushgateway_metrics import PushgatewayMetrics
+from app.infrastructure.loggers.file_logger import FileLogger
+from app.infrastructure.metrics.redis_metrics import RedisMetrics
+from app.infrastructure.metrics.pushgateway_metrics import PushgatewayMetrics
 from app.infrastructure.redis_queue import RedisQueue
-from app.infrastructure.redis_priority_queue import RedisPriorityQueue
+from app.infrastructure.queues.redis_priority_queue import RedisPriorityQueue
 
 
 class LoggerType(str, Enum):
