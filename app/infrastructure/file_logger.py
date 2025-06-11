@@ -33,3 +33,7 @@ class FileLogger(BaseLogger):
 
     def log(self, worker_id: str, task_id: str, message: str):
         self.info(f"[Worker:{worker_id}] [Task:{task_id}] {message}")
+
+    def warning(self, message: str):
+        with FileLock(self.log_file + ".lock"):
+            self.logger.warning(message)

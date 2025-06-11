@@ -58,6 +58,7 @@ class WorkerManager:
                 processor = TaskProcessor(self.logger, self.metrics)
                 logger.debug(f"{thread_name} processing task: {getattr(task, 'id', repr(task))}")
                 success, processing_time = processor.process(task)
+                self.metrics.task_processed()
                 if not success and task.attempts < settings.TASK_MAX_RETRIES:
                     logger.warning(
                         f"{thread_name} failed to process task {getattr(task, 'id', repr(task))}, "

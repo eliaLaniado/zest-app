@@ -4,7 +4,11 @@ class BaseMetrics(ABC):
     @abstractmethod
     def task_started(self):
         pass
-
+    
+    @abstractmethod
+    def task_processed(self):
+        pass
+    
     @abstractmethod
     def task_succeeded(self):
         pass

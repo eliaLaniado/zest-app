@@ -20,9 +20,16 @@ class PushgatewayMetrics(BaseMetrics):
 
     def push(self):
         push_to_gateway(self.pushgateway_addr, job=self.job, registry=self.registry)
+    
+    def task_started(self):
+        self.active_workers.inc()
+        self.push()
+    
+    def task_processed(self):
+        self.tasks_processed.inc()
+        self.push()
 
     def task_succeeded(self):
-        self.tasks_processed.inc()
         self.tasks_succeeded.inc()
         self.push()
 
@@ -41,10 +48,6 @@ class PushgatewayMetrics(BaseMetrics):
     def set_worker_counts(self, active: int, idle: int):
         self.active_workers.set(active)
         self.idle_workers.set(idle)
-        self.push()
-
-    def task_started(self):
-        self.active_workers.inc()
         self.push()
 
     def get_statistics(self) -> dict:

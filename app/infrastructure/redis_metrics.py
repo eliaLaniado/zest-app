@@ -9,9 +9,11 @@ class RedisMetrics(BaseMetrics):
 
     def task_started(self):
         self._redis.incr(f"{self._prefix}active_workers")
+    
+    def task_processed(self):
+        self._redis.incr(f"{self._prefix}tasks_processed")
 
     def task_succeeded(self):
-        self._redis.incr(f"{self._prefix}tasks_processed")
         self._redis.incr(f"{self._prefix}tasks_succeeded")
         self._redis.decr(f"{self._prefix}active_workers")
 
