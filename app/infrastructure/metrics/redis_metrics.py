@@ -24,6 +24,9 @@ class RedisMetrics(BaseMetrics):
     def task_retried(self):
         self._redis.incr(f"{self._prefix}tasks_retried")
 
+    def task_dead_lettered(self):
+        self._redis.incr(f"{self._prefix}tasks_dead_lettered")
+
     def set_queue_length(self, length: int):
         self._redis.set(f"{self._prefix}queue_length", length)
 
@@ -33,8 +36,9 @@ class RedisMetrics(BaseMetrics):
 
     def get_statistics(self) -> dict:
         keys = [
-            "tasks_processed", "tasks_retried", "tasks_succeeded", "tasks_failed",
-            "queue_length", "idle_workers", "active_workers"
+            "tasks_processed", "tasks_retried", "tasks_succeeded", 
+            "tasks_failed", "queue_length", "idle_workers", 
+            "active_workers", "tasks_dead_lettered"  
         ]
         stats = {}
         for key in keys:

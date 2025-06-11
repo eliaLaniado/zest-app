@@ -36,3 +36,8 @@ class BaseMetrics(ABC):
     @abstractmethod
     def reset(self):
         pass
+
+    @abstractmethod
+    def task_dead_lettered(self):
+        pass
+    

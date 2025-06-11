@@ -13,3 +13,8 @@ class BaseQueue(ABC):
     @abstractmethod
     def get_queue_length(self) -> int:
         pass
+
+    @abstractmethod
+    def enqueue_dead_letter(self, task: Task) -> str:
+        """Enqueue a failed task to the dead letter queue"""
+        pass

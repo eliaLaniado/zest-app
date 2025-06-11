@@ -12,6 +12,7 @@ class RedisPriorityQueue(BaseQueue):
             decode_responses=False
         )
         self._queue_name = settings.TASK_QUEUE_NAME
+        self._dead_letter_queue = settings.DEAD_LETTER_QUEUE_NAME
 
     def enqueue(self, task: Task, priority: int = settings.TASK_PRIORITY) -> str:
         task_data = task.model_dump_json().encode('utf-8')
@@ -28,3 +29,8 @@ class RedisPriorityQueue(BaseQueue):
 
     def get_queue_length(self) -> int:
         return self._redis.zcard(self._queue_name)
+
+    def enqueue_dead_letter(self, task: Task) -> str:
+        task_data = task.model_dump_json().encode('utf-8')
+        self._redis.lpush(self._dead_letter_queue, task_data)
+        return str(task.id)

@@ -1,3 +1,4 @@
+from os import cpu_count
 
 from pydantic_settings import BaseSettings
 from pydantic import Field
@@ -20,6 +21,10 @@ class Settings(BaseSettings):
     TASK_PRIORITY: int = Field(default=100, env="TASK_PRIORITY")
     RETRY_TASK_PRIORITY: int = Field(default=10, env="RETRY_TASK_PRIORITY")      
     TASK_QUEUE_NAME: str = Field(default="task_priority_queue", env="TASK_QUEUE_NAME")
+    DEAD_LETTER_QUEUE_NAME: str = Field(
+        default="dead_letter_queue", 
+        env="DEAD_LETTER_QUEUE_NAME"
+    )
 
     TASK_SIMULATED_DURATION: float = Field(
         default=1.0, env="TASK_SIMULATED_DURATION")
@@ -31,6 +36,8 @@ class Settings(BaseSettings):
         default=30.0, env="WORKER_TIMEOUT")
     TASK_MAX_RETRIES: int = Field(
         default=3, env="TASK_MAX_RETRIES")
+    WORKER_COUNT: int = Field(
+        default=cpu_count(), env="WORKER_COUNT")
 
     class Config:
         env_file = ".env"

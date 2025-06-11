@@ -17,6 +17,11 @@ class PushgatewayMetrics(BaseMetrics):
         self.queue_length = Gauge('queue_length', 'Queue length', registry=self.registry)
         self.pushgateway_addr = f"http://{settings.PROMETHEUS_PUSHGATEWAY_HOST}:{settings.PROMETHEUS_PUSHGATEWAY_PORT}" 
         self.job = f"zest-worker-{socket.gethostname()}"
+        self.tasks_dead_lettered = Counter(
+            'tasks_dead_lettered', 
+            'Total tasks moved to dead letter queue', 
+            registry=self.registry
+        )
 
     def push(self):
         push_to_gateway(self.pushgateway_addr, job=self.job, registry=self.registry)
@@ -39,6 +44,10 @@ class PushgatewayMetrics(BaseMetrics):
 
     def task_retried(self):
         self.tasks_retried.inc()
+        self.push()
+
+    def task_dead_lettered(self):
+        self.tasks_dead_lettered.inc()
         self.push()
 
     def set_queue_length(self, length: int):
@@ -75,6 +84,7 @@ class PushgatewayMetrics(BaseMetrics):
             "queue_length": extract_metric("queue_length"),
             "idle_workers": extract_metric("idle_workers"),
             "active_workers": extract_metric("active_workers"),
+            "tasks_dead_lettered": extract_metric("tasks_dead_lettered_total"),
             "source": "pushgateway"
         }
 

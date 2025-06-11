@@ -22,15 +22,14 @@ def main():
     manager.start()
     
     try:
-        # Main monitoring loop
         while True:
-            # Update metrics
-            queue_length = queue.get_queue_length()
-            metrics.set_queue_length(queue_length)
-            metrics.set_worker_counts(
-                active=manager.active_workers,
-                idle=manager.idle_workers
-            )
+            # Use lock for consistent metrics
+            with manager.lock:
+                metrics.set_queue_length(queue.get_queue_length())
+                metrics.set_worker_counts(
+                    active=manager.active_workers,
+                    idle=manager.idle_workers
+                )
             time.sleep(1)
     except KeyboardInterrupt:
         logger.info("Shutting down worker service")

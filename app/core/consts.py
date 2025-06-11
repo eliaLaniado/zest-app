@@ -2,7 +2,7 @@ from enum import Enum
 from app.infrastructure.loggers.file_logger import FileLogger
 from app.infrastructure.metrics.redis_metrics import RedisMetrics
 from app.infrastructure.metrics.pushgateway_metrics import PushgatewayMetrics
-from app.infrastructure.redis_queue import RedisQueue
+from app.infrastructure.queues.redis_queue import RedisQueue
 from app.infrastructure.queues.redis_priority_queue import RedisPriorityQueue
 
 
@@ -18,7 +18,7 @@ class QueueType(str, Enum):
     PRIORITY_REDIS = "redis_priority"
 
 DEFAULT_LOGGER_TYPE = LoggerType.FILE
-DEFAULT_METRICS_TYPE = MetricsType.REDIS
+DEFAULT_METRICS_TYPE = MetricsType.PUSHGATEWAY
 DEFAULT_QUEUE_TYPE = QueueType.REDIS
 
 # Mapping registry

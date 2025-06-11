@@ -1,8 +1,10 @@
 import os
+import concurrent.futures
 import threading
 import time
 import logging
 import redis
+from typing import Optional
 from app.core.queue import BaseQueue
 from app.core.logger import BaseLogger
 from app.core.metrics import BaseMetrics
@@ -15,95 +17,108 @@ class WorkerManager:
     def __init__(
         self,
         queue: BaseQueue,
-        logger: BaseLogger,
-        metrics: BaseMetrics
+        logger_component: BaseLogger,
+        metrics: BaseMetrics,
+        max_workers: Optional[int] = None
     ):
         self.queue = queue
-        self.logger = logger
+        self.logger = logger_component
         self.metrics = metrics
-        self.max_workers = os.cpu_count() or 4
-        self.workers: list[threading.Thread] = []
-        self.active = True
+        self.max_workers = max_workers or settings.WORKER_COUNT
+        self.active = False
+        self.lock = threading.Lock()
         self.active_workers = 0
-        self.idle_workers = 0
+        self.idle_workers = self.max_workers
+        self.executor = None
+        self.futures = []
 
     def start(self):
+        """Start the worker pool with automatic thread resurrection"""
         logger.info(f"Starting worker pool with {self.max_workers} workers")
-        for i in range(self.max_workers):
-            logger.debug(f"Spawning worker thread {i+1}/{self.max_workers}")
-            worker = threading.Thread(target=self._worker_loop, name=f"WorkerThread-{i+1}")
-            worker.daemon = True
-            worker.start()
-            self.workers.append(worker)
-            self.idle_workers += 1
-        logger.info(f"All {self.max_workers} worker threads started.")
+        self.active = True
+        self.executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.max_workers,
+            thread_name_prefix="Worker"
+        )
+        
+        # Submit initial workers
+        for _ in range(self.max_workers):
+            if self.active:
+                future = self.executor.submit(self._worker_loop)
+                self.futures.append(future)
+                future.add_done_callback(self._worker_done_callback)
+
+    def _worker_done_callback(self, future):
+        """Automatically restart workers that die unexpectedly"""
+        if self.active and future.exception():
+            logger.error(f"Worker died with error: {future.exception()}")
+            # Remove the dead future
+            self.futures.remove(future)
+            # Start a new worker
+            new_future = self.executor.submit(self._worker_loop)
+            self.futures.append(new_future)
+            new_future.add_done_callback(self._worker_done_callback)
+
+    def stop(self):
+        """Gracefully shutdown the worker pool"""
+        logger.info("Stopping worker manager")
+        self.active = False
+        
+        if self.executor:
+            self.executor.shutdown(wait=True)
+            self.futures.clear()
+        
+        logger.info("Worker manager stopped")
 
     def _worker_loop(self):
+        """Individual worker loop - now managed by ThreadPoolExecutor"""
         thread_name = threading.current_thread().name
-        logger.info(f"{thread_name} started.")
-        last_activity = time.time()
+        logger.info(f"{thread_name} started")
         
         while self.active:
             try:
-                logger.debug(f"{thread_name} waiting for task...")
                 task = self.queue.dequeue()
                 if task is None:
-                    logger.debug(f"{thread_name} found no task in queue, sleeping briefly.")
-                    time.sleep(0.1)
+                    time.sleep(0.5)
                     continue
-                logger.info(f"{thread_name} dequeued task: {getattr(task, 'id', repr(task))}")
-                self.idle_workers -= 1
-                self.active_workers += 1
-                
-                processor = TaskProcessor(self.logger, self.metrics)
-                logger.debug(f"{thread_name} processing task: {getattr(task, 'id', repr(task))}")
-                success, processing_time = processor.process(task)
-                self.metrics.task_processed()
-                if not success and task.attempts < settings.TASK_MAX_RETRIES:
-                    logger.warning(
-                        f"{thread_name} failed to process task {getattr(task, 'id', repr(task))}, "
-                        f"retrying (attempt {task.attempts}/{settings.TASK_MAX_RETRIES})"
-                    )
-                    self.metrics.task_retried()
-                    time.sleep(settings.TASK_ERROR_RETRY_DELAY)
-                    self.queue.enqueue(task, priority=settings.RETRY_TASK_PRIORITY)
-                elif not success:
-                    logger.error(
-                        f"{thread_name} permanently failed task {getattr(task, 'id', repr(task))} "
-                        f"after {task.attempts} attempts. Dropping task."
-                    )
-                else:
-                    logger.info(
-                        f"{thread_name} successfully processed task {getattr(task, 'id', repr(task))} "
-                        f"in {processing_time:.2f}s"
-                    )
-                
-                self.active_workers -= 1
-                self.idle_workers += 1
-                last_activity = time.time()
-                
-            except redis.exceptions.ConnectionError as e:
-                logger.error(f"{thread_name} Redis connection error: {str(e)}")
-                time.sleep(1)
-                
+
+                with self.lock:
+                    self.idle_workers -= 1
+                    self.active_workers += 1
+
+                try:
+                    self._process_task(task, thread_name)
+                finally:
+                    with self.lock:
+                        self.active_workers -= 1
+                        self.idle_workers += 1
+
             except Exception as e:
-                logger.error(f"{thread_name} Worker error: {str(e)}", exc_info=True)
-                idle_time = time.time() - last_activity
-                
-                if idle_time > settings.WORKER_TIMEOUT:
-                    logger.info(f"{thread_name} exiting due to timeout after {idle_time:.2f} seconds idle.")
-                    break
-                    
+                logger.error(f"{thread_name} error: {str(e)}", exc_info=True)
                 time.sleep(0.1)
         
-        self.idle_workers -= 1
-        logger.info(f"{thread_name} exiting.")
+        logger.info(f"{thread_name} exiting")
 
-    def stop(self):
-        logger.info("Stopping worker manager")
-        self.active = False
-        for worker in self.workers:
-            if worker.is_alive():
-                logger.debug(f"Joining {worker.name}")
-                worker.join(timeout=5.0)
-        logger.info("All worker threads stopped.")
+    def _process_task(self, task, thread_name):
+        """Encapsulated task processing logic"""
+        logger.info(f"{thread_name} processing: {getattr(task, 'id', repr(task))}")
+        processor = TaskProcessor(self.logger, self.metrics)
+        
+        success, processing_time = processor.process(task)
+        self.metrics.task_processed()
+        
+        if not success:
+            if task.attempts < settings.TASK_MAX_RETRIES:
+                logger.warning(
+                    f"{thread_name} retrying {getattr(task, 'id', repr(task))} "
+                    f"(attempt {task.attempts}/{settings.TASK_MAX_RETRIES})"
+                )
+                self.metrics.task_retried()
+                time.sleep(settings.TASK_ERROR_RETRY_DELAY)
+                self.queue.enqueue(task, priority=settings.RETRY_TASK_PRIORITY)
+            else:
+                logger.error(
+                    f"{thread_name} moving task to dead letter queue: {getattr(task, 'id', repr(task))}"
+                )
+                self.queue.enqueue_dead_letter(task)
+                self.metrics.task_dead_lettered()

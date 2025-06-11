@@ -25,3 +25,8 @@ class RedisQueue(BaseQueue):
 
     def get_queue_length(self) -> int:
         return self._redis.llen(self._queue_name)
+    
+    def enqueue_dead_letter(self, task: Task) -> str:
+        task_data = task.model_dump_json().encode('utf-8')
+        self._redis.lpush(self._dead_letter_queue, task_data)
+        return str(task.id)
