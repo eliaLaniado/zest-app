@@ -21,7 +21,7 @@ A microservice-based asynchronous task processing system with FastAPI, Redis, Pr
 ### 1. **Clone the repository**
 
 ```sh
-git clone <your-repo-url>
+git clone https://github.com/eliaLaniado/zest-app.git
 cd zest-app
 ```
 
