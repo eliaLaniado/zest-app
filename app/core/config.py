@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     LOGGER_TYPE: str = Field(default="file", env="LOGGER_TYPE")         
     
     METRICS_TYPE: str = Field(default="redis", env="METRICS_TYPE")      
+    PROMETHEUS_PUSHGATEWAY_HOST: str = Field(
+        default="localhost", env="PROMETHEUS_PUSHGATEWAY_HOST")
+    PROMETHEUS_PUSHGATEWAY_PORT: int = Field(
+        default=9091, env="PROMETHEUS_PUSHGATEWAY_PORT")
     QUEUE_TYPE: str = Field(default="redis", env="QUEUE_TYPE")     
     TASK_PRIORITY: int = Field(default=100, env="TASK_PRIORITY")
     RETRY_TASK_PRIORITY: int = Field(default=10, env="RETRY_TASK_PRIORITY")      
