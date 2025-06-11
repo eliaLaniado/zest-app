@@ -24,7 +24,6 @@ app.include_router(metrics.router)
 @app.on_event("startup")
 async def startup():
     logger.info("Starting application")
-    # Ensure log directory exists
     os.makedirs(os.path.dirname(settings.LOG_FILE), exist_ok=True)
 
 @app.on_event("shutdown")

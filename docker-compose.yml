@@ -15,6 +15,14 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - task-network
+
+  prometheus-pushgateway:
+    image: prom/pushgateway:latest
+    ports:
+      - "9091:9091"
+    networks:
+      - task-network
+
   app:
     build:
       context: .
@@ -45,7 +53,7 @@ services:
       - REDIS_HOST=redis
       - LOG_FILE=/data/tasks.log
       - TASK_SIMULATED_DURATION=1.0
-      - TASK_SIMULATED_ERROR_PERCENTAGE=0.9
+      - TASK_SIMULATED_ERROR_PERCENTAGE=0.3
       - TASK_ERROR_RETRY_DELAY=5.0
       - WORKER_TIMEOUT=30.0
       - TASK_MAX_RETRIES=3
@@ -53,13 +61,6 @@ services:
       - task-data:/data
     depends_on:
       - redis
-    networks:
-      - task-network
-
-  prometheus-pushgateway:
-    image: prom/pushgateway:latest
-    ports:
-      - "9091:9091"
     networks:
       - task-network
 
